@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: itsmetommy
+  name: redis-join
+spec:
+  template:
+    metadata:
+      name: redis-join
+    spec:
+      containers:
+      - name: redis-join
+        image: alpine
+        command: [ "/bin/sh" ]
+        args:
+        - "-c"
+        - >
+          apk update &&
+          apk add --no-cache ruby wget &&
+          wget http://download.redis.io/redis-stable/src/redis-trib.rb &&
+          chmod 755 redis-trib.rb &&
+          gem install --no-ri --no-rdoc redis &&
+          ip_node_0=`getent hosts redis-cluster-0.redis-service.itsmetommy.svc.cluster.local | awk '{print $1}'` &&
+          ip_node_1=`getent hosts redis-cluster-1.redis-service.itsmetommy.svc.cluster.local | awk '{print $1}'` &&
+          ip_node_2=`getent hosts redis-cluster-2.redis-service.itsmetommy.svc.cluster.local | awk '{print $1}'` &&
+          ip_node_3=`getent hosts redis-cluster-3.redis-service.itsmetommy.svc.cluster.local | awk '{print $1}'` &&
+          ip_node_4=`getent hosts redis-cluster-4.redis-service.itsmetommy.svc.cluster.local | awk '{print $1}'` &&
+          ip_node_5=`getent hosts redis-cluster-5.redis-service.itsmetommy.svc.cluster.local | awk '{print $1}'` &&
+          echo 'yes' | ./redis-trib.rb create --replicas 1 ${ip_node_0}:6379 ${ip_node_1}:6379 ${ip_node_2}:6379 ${ip_node_3}:6379 ${ip_node_4}:6379 ${ip_node_5}:6379
+      restartPolicy: Never
